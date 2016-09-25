@@ -1,17 +1,21 @@
+#import relevant libraries: glob for searching for files, os for manipulating files, sys for getting the arguments
 import glob
 import os
 import sys
 
+#setting up the workspace
 download_dir = ""
 original_dir = os.getcwd()
 
+#working out if this is your first time using it (creates config file if it doesn't exist)
 if not os.path.exists("config"):
     with open("config", mode="w") as config:
         config.write("first_time=yes")
     
-
+#this function changes to your downloads directory and keeps it in the config file
 def change_dir(change):
     global download_dir
+    #if it's the first time or a change has been requested
     if "first_time=yes" in open(original_dir + "\config").read() or change == True:
         with open(original_dir + "\config", mode="w") as config:
             config.write("first_time=no")
@@ -39,12 +43,15 @@ def change_dir(change):
                     print("{0} was not found, creating now...".format(download_dir))
                     os.makedirs(download_dir)
                     os.chdir(download_dir)
+
+#change to to directory that's written in the config file
 change_dir(False)
 
 #{path:extension}
 file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
 help_text = "This program sorts your downloads. Use these arguments to choose what to sort:\n\t-docs\t\tsorts your documents\n\t-progs\t\tsorts your programs\n\t-compressed\tsorts your compressed files\n\t-sound\t\tsorts your sound files\n\t-image\t\tsorts your image files\n\t-dskimg\t\tsorts your disk image files\n\t-misc\t\tsorts your miscellaneous files\n\t-all\t\tsorts all file types\n\t-custom\t\tcustomisable file sort\n\t-chgdir\t\tchanges the downloads folder\n\t-help\t\tshows this help text"
 
+#this function c
 def sort_custom(directory, extensions, type):
     global custom_files
     custom_files = []

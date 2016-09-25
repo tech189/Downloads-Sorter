@@ -117,7 +117,7 @@ else:
         sort_misc(download_dir + "Miscellaneous/")
     elif sys.argv[1] == "-custom":
         custom_extensions_input = input("Enter the extensions to move separated by commas: ").split(",")
-        custom_directory_input = download_dir + input("Enter a subdirectory name(such as ISOs/): ")
+        custom_directory_input = download_dir + input("Enter a subdirectory name (such as ISOs/): ")
         sort_custom(custom_directory_input, custom_extensions_input, "")
     elif sys.argv[1] == "-chgdir":
         change_dir(True)
