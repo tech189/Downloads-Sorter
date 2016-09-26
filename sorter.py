@@ -1,12 +1,16 @@
+#import relevant libraries: glob for searching for files, os for manipulating files, sys for getting the arguments
 import glob
 import os
 import sys
 
+#setting up the workspace
 download_dir = ""
 original_dir = os.getcwd()
 
+#this function changes to your downloads directory and keeps it in the config file
 def change_dir(change):
     global download_dir
+    #if it's the first time or a change has been requested
     if "first_time=yes" in open(original_dir + "\config").read() or change == True:
         with open(original_dir + "\config", mode="w") as config:
             config.write("first_time=no")
@@ -34,12 +38,15 @@ def change_dir(change):
                     print("{0} was not found, creating now...".format(download_dir))
                     os.makedirs(download_dir)
                     os.chdir(download_dir)
+
+#change to the directory that's written in the config file
 change_dir(False)
 
 #{path:extension}
 file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
 help_text = "This program sorts your downloads. Use these arguments to choose what to sort:\n\t-docs\t\tsorts your documents\n\t-progs\t\tsorts your programs\n\t-compressed\tsorts your compressed files\n\t-sound\t\tsorts your sound files\n\t-image\t\tsorts your image files\n\t-dskimg\t\tsorts your disk image files\n\t-misc\t\tsorts your miscellaneous files\n\t-all\t\tsorts all file types\n\t-custom\t\tcustomisable file sort\n\t-chgdir\t\tchanges the downloads folder\n\t-help\t\tshows this help text"
 
+#this function takes in the directory to move the files to, the extensions to move, and a the category of the files so the output looks nice
 def sort_custom(directory, extensions, type):
     global custom_files
     custom_files = []
@@ -48,6 +55,7 @@ def sort_custom(directory, extensions, type):
             custom_files.append(x)
     if not os.path.exists(directory):
         os.makedirs(directory)
+    #check if it can't be copied
     for x in custom_files:
         try:
             os.rename(x, directory+os.path.basename(x))
@@ -59,10 +67,12 @@ def sort_custom(directory, extensions, type):
             print("Can't move {0} to {1}. The file is currently in use...".format(x, directory+os.path.basename(x)))
             custom_files.remove(x)
     print("Moved {0}{1} files.".format(str(len(custom_files)), type))
-
+    
+#miscellaneous sorting is slightly different
 def sort_misc(directory):
     global misc_files
     misc_files = []
+    #only gets files not in the extension lists
     for x in file_dict:
         if file_dict[x] not in all_extensions and not file_dict[x] == ".ini":
             misc_files.append(x)
