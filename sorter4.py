@@ -7,6 +7,7 @@ import ast
 #setting up the workspace
 download_dir = ""
 original_dir = os.getcwd()
+file_dict = {}
 
 default_extensions = {
     "document_extensions":[".txt", ".pdf", ".docx", ".md"],
@@ -21,21 +22,12 @@ default_configuration = {
     "download_dir": ""
 }
 
-#{path:extension}
-file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
+
 help_text = "This program sorts your downloads. Use these arguments to choose what to sort:\n\t-docs\t\tsorts your documents\n\t-progs\t\tsorts your programs\n\t-compressed\tsorts your compressed files\n\t-sound\t\tsorts your sound files\n\t-image\t\tsorts your image files\n\t-dskimg\t\tsorts your disk image files\n\t-misc\t\tsorts your miscellaneous files\n\t-all\t\tsorts all file types\n\t-custom\t\tcustomisable file sort\n\t-chgdir\t\tchanges the downloads folder\n\t-help\t\tshows this help text"
 
 
 extensions = {}
 configuration = {}
-
-def load_config():
-    global extensions
-    global configuration
-    with open(original_dir + "\extensions.txt", mode="r") as config:
-        extensions = config.read()
-    with open(original_dir + "\config.txt", mode="r") as config:
-        configuration = config.read()
 
 def save_config(items):
     global extensions
@@ -54,6 +46,24 @@ def save_config(items):
     elif items == "default_config":
         with open(original_dir + "\config.txt", mode="w") as config:
             config.write(str(default_configuration))
+
+def load_config():
+    global extensions
+    global configuration
+    try:
+        with open(original_dir + "\extensions.txt", mode="r") as config:
+            extensions = config.read()
+    except FileNotFoundError:
+        file = open("config.txt", mode="w")
+        file.close()
+        save_config("default_config")
+    try:
+        with open(original_dir + "\config.txt", mode="r") as config:
+            configuration = config.read()
+    except FileNotFoundError:
+        file = open("extensions.txt", mode="w")
+        save_config("default_exts")
+        file.close()
 
 def edit_extensions(task):
     if task == "add":
@@ -143,7 +153,7 @@ def change_dir(change):
     #if it's the first time or a change has been requested
     load_config()
     #ast.literal_eval(configuration)
-    if "first_time=yes" in configuration or change == True or configuration == {}:
+    if change == True or bool(configuration) == False:
         download_input = input("Please enter the full path to a folder where your downloads are currently kept: ")
         edit_config("first_time", "no")
         edit_config("download_dir", download_input)
@@ -166,7 +176,7 @@ def change_dir(change):
         save_config("config")
         
         
-        print("Downloads folder changed to {0}.".format(os.getcwd()))
+        print("Folder to sort is {0}.".format(os.getcwd()))
     
     else:
         if "download_dir" in configuration:
@@ -178,7 +188,7 @@ def change_dir(change):
                 os.makedirs(configuration["download_dir"])
                 os.chdir(configuration["download_dir"])
                 
-        print("Downloads folder changed to {0}.".format(os.getcwd()))
+        print("Folder to sort is {0}.".format(os.getcwd()))
 
 
 #this function takes in the directory to move the files to, the extensions to move, and a the category of the files so the output looks nice
@@ -205,6 +215,7 @@ def sort_custom(directory, extensions, type):
 
 #miscellaneous sorting is slightly different
 def sort_misc(directory):
+    all_extensions = extensions["document_extensions"] + extensions["program_extensions"] + extensions["compressed_extensions"] + extensions["sound_extensions"] + extensions["image_extensions"] + extensions["dskimg_extensions"]
     global misc_files
     misc_files = []
     #only gets files not in the extension lists
@@ -225,59 +236,71 @@ def sort_misc(directory):
             misc_files.remove(x)
     print("Moved {0} miscellaneous files.".format(str(len(misc_files))))
 
-
-while os.path.isfile("config.txt") == False or os.path.isfile("extensions.txt") == False:
-    if os.path.isfile("config.txt") == False:
-        file = open("config.txt", mode="w")
-        file.close()
-    elif os.path.isfile("extensions.txt") == False:
-        file = open("extensions.txt", mode="w")
+def startup():
+    global file_dict
+    if bool(extensions) == False:
         save_config("default_exts")
-        file.close()
-    else:
-        break
-        
-if bool(extensions) == False:
-    save_config("default_exts")
+    check = 0
+    while os.path.isfile("config.txt") == False or os.path.isfile("extensions.txt") == False:
+        if os.path.isfile("config.txt") == False:
+            file = open("config.txt", mode="w")
+            file.close()
+            change_dir(True)
+            check += 1
+        elif os.path.isfile("extensions.txt") == False:
+            file = open("extensions.txt", mode="w")
+            save_config("default_exts")
+            file.close()
+            check += 1
+        else:
+            change_dir("normal")
+        if check == 2:
+            break
+    load_config()
+    change_dir("normal")
+    #{path:extension}
+    file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
 
-change_dir("normal")
-
-
-extensions = ast.literal_eval(extensions)
+#print(extensions)
+#extensions = ast.literal_eval(extensions)
 
 #get the arguments and act on them
 if len(sys.argv) < 2:
     print(help_text)
 else:
+    startup()
+    extensions = ast.literal_eval(extensions)
+    #configuration = ast.literal_eval(configuration)
     if sys.argv[1] == "-docs":
-        sort_custom(configuration["download_dir"] + "Documents/", document_extensions, " document")
+        sort_custom(configuration["download_dir"] + "/Documents/", extensions["document_extensions"], " document")
     elif sys.argv[1] == "-progs":
-        sort_custom(configuration["download_dir"] + "Programs/", program_extensions, " program")
+        sort_custom(configuration["download_dir"] + "/Programs/", extensions["program_extensions"], " program")
     elif sys.argv[1] == "-compressed":
-        sort_custom(configuration["download_dir"] + "Compressed/", compressed_extensions, " compressed")
+        sort_custom(configuration["download_dir"] + "/Compressed/", extensions["compressed_extensions"], " compressed")
     elif sys.argv[1] == "-sound":
-        sort_custom(configuration["download_dir"] + "Sounds/", sound_extensions, " sound")
+        sort_custom(configuration["download_dir"] + "/Sounds/", extensions["sound_extensions"], " sound")
     elif sys.argv[1] == "-image":
-        sort_custom(configuration["download_dir"] + "Images/", image_extensions, " image")
+        sort_custom(configuration["download_dir"] + "/Images/", extensions["image_extensions"], " image")
     elif sys.argv[1] == "-dskimg":
-        sort_custom(configuration["download_dir"] + "Disk images/", dskimg_extensions, " disk image")
+        sort_custom(configuration["download_dir"] + "/Disk images/", extensions["dskimg_extensions"], " disk image")
     elif sys.argv[1] == "-misc":
-        sort_misc(configuration["download_dir"] + "Miscellaneous/")
+        sort_misc(configuration["download_dir"] + "/Miscellaneous/")
     elif sys.argv[1] == "-all":
-        sort_custom(configuration["download_dir"] + "Documents/", document_extensions, " document")
-        sort_custom(configuration["download_dir"] + "Programs/", program_extensions, " program")
-        sort_custom(configuration["download_dir"] + "Compressed/", compressed_extensions, " compressed")
-        sort_custom(configuration["download_dir"] + "Sounds/", sound_extensions, " sound")
-        sort_custom(configuration["download_dir"] + "Images/", image_extensions, " image")
-        sort_custom(configuration["download_dir"] + "Disk images/", dskimg_extensions, " disk image")
-        sort_misc(configuration["download_dir"] + "Miscellaneous/")
+        sort_custom(configuration["download_dir"] + "/Documents/", extensions["document_extensions"], " document")
+        sort_custom(configuration["download_dir"] + "/Programs/", extensions["program_extensions"], " program")
+        sort_custom(configuration["download_dir"] + "/Compressed/", extensions["compressed_extensions"], " compressed")
+        sort_custom(configuration["download_dir"] + "/Sounds/", extensions["sound_extensions"], " sound")
+        sort_custom(configuration["download_dir"] + "/Images/", extensions["image_extensions"], " image")
+        sort_custom(configuration["download_dir"] + "/Disk images/", extensions["dskimg_extensions"], " disk image")
+        sort_misc(configuration["download_dir"] + "/Miscellaneous/")
     elif sys.argv[1] == "-custom":
         custom_extensions_input = input("Enter the extensions to move separated by commas: ").split(",")
-        custom_directory_input = configuration["download_dir"] + input("Enter a subdirectory name (such as ISOs/): ")
+        custom_directory_input = configuration["download_dir"] + input("Enter a subdirectory name (such as /ISOs/): ")
         sort_custom(custom_directory_input, custom_extensions_input, "")
     elif sys.argv[1] == "-chgdir":
         change_dir(True)
     elif sys.argv[1] == "-help":
         print(help_text)
     else:
+        startup()
         print(help_text)
