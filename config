@@ -1,2 +1,7 @@
 first_time=no
-download_dir=D:/Downloads/
+dskimg_extensions=[['.iso', '.img', '.esd']}image_extensions=[['.jpg', '.jpeg', '.JPEG', '.JPG', '.png', '.gif', '.tiff', '.ico']}
+sound_extensions=[['.mp3', '.wav', '.aac', '.flac']}
+compressed_extensions=[['.zip', '.7z', '.tar', '.cab', '.bz2', '.rar', '.xz']}
+program_extensions=[['.exe', '.msi']}
+document_extensions=[['.txt', '.pdf', '.docx', '.md']}
+download_dir=D:/Test Downloads/

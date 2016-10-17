@@ -8,7 +8,7 @@ download_dir = ""
 original_dir = os.getcwd()
 
 #working out if this is your first time using it (creates config file if it doesn't exist)
-if not os.path.exists("config"):
+if not os.path.exists("config") or os.stat("config").st_size == 0:
     with open("config", mode="w") as config:
         config.write("first_time=yes")
     
@@ -111,21 +111,16 @@ def save_extensions(extension_var, extensions):
     #contents.close()
 
 #TODO: Make the extensions lists editable
+#TODO: Make these extensions not case sensitive
 document_extensions = [".txt", ".pdf", ".docx", ".md"]
 program_extensions = [".exe", ".msi"]
 compressed_extensions = [".zip", ".7z", ".tar", ".cab", ".bz2", ".rar", ".xz"]
 sound_extensions = [".mp3", ".wav", ".aac", ".flac"]
-image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".tiff", ".ico"]
+image_extensions = [".jpg", ".jpeg", ".JPEG", ".JPG", ".png", ".gif", ".tiff", ".ico"]
 dskimg_extensions = [".iso", ".img", ".esd"]
 all_extensions = document_extensions + program_extensions + compressed_extensions + sound_extensions + image_extensions + dskimg_extensions
 
-if "first_time=yes" in open(original_dir + "\config").read():
-    save_extensions("document_extensions=", document_extensions)
-    save_extensions("program_extensions=", program_extensions)
-    save_extensions("compressed_extensions=", compressed_extensions)
-    save_extensions("sound_extensions=", sound_extensions)
-    save_extensions("image_extensions=", image_extensions)
-    save_extensions("dskimg_extensions=", dskimg_extensions)
+
 '''
 with open(original_dir + "\config", mode="r") as config:
     contents = config.readlines()
@@ -162,10 +157,18 @@ else:
         sort_misc(download_dir + "Miscellaneous/")
     elif sys.argv[1] == "-custom":
         custom_extensions_input = input("Enter the extensions to move separated by commas: ").split(",")
-        custom_directory_input = download_dir + input("Enter a subdirectory name(such as ISOs/): ")
+        custom_directory_input = download_dir + input("Enter a subdirectory name (such as ISOs/): ")
         sort_custom(custom_directory_input, custom_extensions_input, "")
     elif sys.argv[1] == "-chgdir":
         change_dir(True)
+    elif sys.argv[1] == "-saveext":
+        if "first_time=yes" in open(original_dir + "\config").read():
+            save_extensions("document_extensions=", document_extensions)
+            save_extensions("program_extensions=", program_extensions)
+            save_extensions("compressed_extensions=", compressed_extensions)
+            save_extensions("sound_extensions=", sound_extensions)
+            save_extensions("image_extensions=", image_extensions)
+            save_extensions("dskimg_extensions=", dskimg_extensions)
     elif sys.argv[1] == "-help":
         print(help_text)
     else:

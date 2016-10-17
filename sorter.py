@@ -95,7 +95,7 @@ document_extensions = [".txt", ".pdf", ".docx", ".md"]
 program_extensions = [".exe", ".msi"]
 compressed_extensions = [".zip", ".7z", ".tar", ".cab", ".bz2", ".rar", ".xz"]
 sound_extensions = [".mp3", ".wav", ".aac", ".flac"]
-image_extensions = [".jpg", ".jpeg", ".png", ".gif", ".tiff", ".ico"]
+image_extensions = [".jpg", ".jpeg", ".JPEG", ".png", ".gif", ".tiff", ".ico"]
 dskimg_extensions = [".iso", ".img", ".esd"]
 all_extensions = document_extensions + program_extensions + compressed_extensions + sound_extensions + image_extensions + dskimg_extensions
 
