@@ -5,6 +5,8 @@ import sys
 import ast
 import tkinter as tk
 from tkinter import ttk
+from tkinter import messagebox
+from tkinter import filedialog
 
 class MainApplication:
 	def __init__(self, master):
@@ -36,8 +38,13 @@ class MainApplication:
 		help_text = "This program sorts your downloads. Use these arguments to choose what to sort:\n\t-docs\t\tsorts your documents\n\t-progs\t\tsorts your programs\n\t-compressed\tsorts your compressed files\n\t-sound\t\tsorts your sound files\n\t-image\t\tsorts your image files\n\t-dskimg\t\tsorts your disk image files\n\t-misc\t\tsorts your miscellaneous files\n\t-all\t\tsorts all file types\n\t-custom\t\tcustomisable file sort\n\t-chgdir\t\tchanges the downloads folder\n\t-help\t\tshows this help text"
 		
 		global extensions
+		global configuration
 		extensions = {}
 		configuration = {}
+		
+		progress_var = 0
+		global entryvar
+		self.entryvar = tk.StringVar()
 		
 		def save_config(items):
 			global extensions
@@ -74,8 +81,6 @@ class MainApplication:
 				file = open("extensions.txt", mode="w")
 				save_config("default_exts")
 				file.close()
-			print("load"+configuration)
-			print("load"+extensions)
 		
 		def edit_extensions(task):
 			if task == "add":
@@ -122,11 +127,9 @@ class MainApplication:
 			if bool(configuration) == False or key == "download_dir":
 				save_config("default_config")
 				load_config()
-				print("bool" + str(configuration))
 				configuration = ast.literal_eval(configuration)
 				print(value)
 				configuration[key] = os.path.normpath(value)
-				print("normpath" + str(configuration))
 				save_config("config")
 			else:
 				'''
@@ -158,56 +161,49 @@ class MainApplication:
 				print("Editing {0} to {1}...".format(key, value))
 				save_config("config")
 			
-		#this function changes to your downloads directory and keeps it in the config file
+		#changes to your downloads directory and keeps it in the config file
 		def change_dir(change):
 			global download_dir
 			global configuration
+			global entryvar
 			#if it's the first time or a change has been requested
 			load_config()
-			print("changedir"+configuration)
 			#ast.literal_eval(configuration)
-			if change == True or bool(configuration) == False:
-				download_input = input("Please enter the full path to a folder where your downloads are currently kept: ")
+			if change == True:
+				download_input = filedialog.askdirectory(initialdir=os.path.expanduser("~"))
 				edit_config("first_time", "no")
 				edit_config("download_dir", download_input)
-				'''
-				configuration = ""
-				configuration += "first_time=no"
-				download_dir = input("Please enter the full path to a folder where your downloads are currently kept: ")
-				configuration += "\n" + "download_dir=" + download_dir
-				download_dir = configuration.split("download_dir=", 1)[1]
-				'''
 				try:
 					load_config()
-					print(configuration)
 					configuration = ast.literal_eval(configuration)
 					os.chdir(configuration["download_dir"])
 				except FileNotFoundError:
-						print("{0} was not found, creating now...".format(download_dir))
-						os.makedirs(download_dir)
-						os.chdir(download_dir)
+					messagebox.showerror("Error", "{0} was not found, creating now...".format(download_dir))
+					os.makedirs(download_dir)
+					os.chdir(download_dir)
 				save_config("config")
 				
+				self.entryvar.set(os.getcwd())
 				
-				print("Folder to sort is {0}.".format(os.getcwd()))
-			
 			else:
 				if "download_dir" in configuration:
 					configuration = ast.literal_eval(configuration)
 					try:
 						os.chdir(configuration["download_dir"])
 					except FileNotFoundError:
-						print("{0} was not found, creating now...".format(configuration["download_dir"]))
+						messagebox.showerror("Error", "{0} was not found, creating now...".format(configuration["download_dir"]))
 						os.makedirs(configuration["download_dir"])
 						os.chdir(configuration["download_dir"])
 						
 				print("Folder to sort is {0}.".format(os.getcwd()))
-				print("after to sort is" + str(configuration))
+				
+				self.entryvar.set(os.getcwd())
 		
-		
-		#this function takes in the directory to move the files to, the extensions to move, and a the category of the files so the output looks nice
+		#takes in the directory to move the files to, the extensions to move, and a the category of the files so the output looks nice
 		def sort_custom(directory, extensions, type):
 			global custom_files
+			global file_dict
+			
 			custom_files = []
 			for x in file_dict:
 				if file_dict[x] in extensions:
@@ -221,11 +217,14 @@ class MainApplication:
 					print("Moving {0} to {1}".format(x, directory+os.path.basename(x)))
 				except FileExistsError:
 					print("Can't move {0} to {1}. The file already exists...".format(x, directory+os.path.basename(x)))
+					messagebox.showerror("Error", "Can't move {0} to {1}. The file already exists in the destination folder...".format(x, directory+os.path.basename(x)))
 					custom_files.remove(x)
 				except PermissionError:
 					print("Can't move {0} to {1}. The file is currently in use...".format(x, directory+os.path.basename(x)))
+					messagebox.showerror("Error", "Can't move {0} to {1}. The file is currently in use...".format(x, directory+os.path.basename(x)))
 					custom_files.remove(x)
 			print("Moved {0}{1} files.".format(str(len(custom_files)), type))
+			messagebox.showinfo("Finished", "Moved {0}{1} file(s).".format(str(len(custom_files)), type))
 		
 		#miscellaneous sorting is slightly different
 		def sort_misc(directory):
@@ -244,11 +243,13 @@ class MainApplication:
 					print("Moving {0} to {1}".format(x, directory+os.path.basename(x)))
 				except FileExistsError:
 					print("Can't move {0} to {1}. The file already exists...".format(x, directory+os.path.basename(x)))
+					messagebox.showerror("Error", "Can't move {0} to {1}. The file already exists in the destination folder...".format(x, directory+os.path.basename(x)))
 					misc_files.remove(x)
 				except PermissionError:
 					print("Can't move {0} to {1}. The file is currently in use...".format(x, directory+os.path.basename(x)))
+					messagebox.showerror("Error", "Can't move {0} to {1}. The file is currently in use...".format(x, directory+os.path.basename(x)))
 					misc_files.remove(x)
-			print("Moved {0} miscellaneous files.".format(str(len(misc_files))))
+			print("Moved {0} miscellaneous file(s).".format(str(len(misc_files))))
 		
 		def startup():
 			global file_dict
@@ -261,6 +262,7 @@ class MainApplication:
 				if os.path.isfile("config.txt") == False:
 					file = open("config.txt", mode="w")
 					file.close()
+					messagebox.showinfo("Welcome!", "This is the first time the program has been opened so you need to choose the folder you wish to sort in the next dialog.")
 					change_dir(True)
 					check += 1
 					print("Config doesn't exist, creating it")
@@ -277,19 +279,16 @@ class MainApplication:
 					print("all files exist, continue")
 					break
 			change_dir("normal")
-			print("about to load")
-			load_config()
-			print("finished loading")
-			#extensions = ast.literal_eval()
-			print("afterchangedir:configuration:" + str(configuration))
-			#gets wiped out here?????!!?!?
-			print("after change_dir:extensions:"+str(extensions))
+			#load_config()
 			#{path:extension}
 			file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
 
-		def button_command():
+		def run_command():
 			global configuration
 			global extensions
+			global file_dict
+			
+			file_dict = {os.path.realpath(f):os.path.splitext(f)[1] for f in glob.glob("*.*")}
 			
 			if type(configuration) == str:
 				configuration = ast.literal_eval(configuration)
@@ -298,32 +297,42 @@ class MainApplication:
 			
 			value = taskmenu.get()
 			if value == "Documents":
+				print(str(configuration["download_dir"]) + "/Documents/" + str(extensions["document_extensions"]) + " document")
 				sort_custom(configuration["download_dir"] + "/Documents/", extensions["document_extensions"], " document")
-				
-				"""
+			elif value == "Programs/Installers":
 				sort_custom(configuration["download_dir"] + "/Programs/", extensions["program_extensions"], " program")
+			elif value == "Compressed files":
 				sort_custom(configuration["download_dir"] + "/Compressed/", extensions["compressed_extensions"], " compressed")
+			elif value == "Sounds/Music files":
 				sort_custom(configuration["download_dir"] + "/Sounds/", extensions["sound_extensions"], " sound")
+			elif value == "Images":
 				sort_custom(configuration["download_dir"] + "/Images/", extensions["image_extensions"], " image")
+			elif value == "Disk Images":
 				sort_custom(configuration["download_dir"] + "/Disk images/", extensions["dskimg_extensions"], " disk image")
+			elif value == "Miscellaneous files":
 				sort_misc(configuration["download_dir"] + "/Miscellaneous/")
+			elif value == "Custom sort":
 				custom_extensions_input = input("Enter the extensions to move separated by commas: ").split(",")
 				custom_directory_input = configuration["download_dir"] + input("Enter a subdirectory name (such as /ISOs/): ")
 				sort_custom(custom_directory_input, custom_extensions_input, "")
-				"""
-				
 			else:
-				print(value) 
+				messagebox.showerror("Error", "Please select a task first")
+		
+		def choose_command():
+			change_dir(True)
+			
 				
-		#start it up
-		startup()
+		
 		
 		#styling
 		master.title("Downloads Sorter")
 		master.geometry("814x477")
 		master.wm_iconbitmap(original_dir + os.path.normpath("/sorter.ico"))
-
-		self.frame = tk.Frame(self.master)
+		master.grid_columnconfigure(0, weight=1)
+		master.grid_rowconfigure(0, weight=1)
+		
+		self.frame1 = tk.Frame(self.master)
+		self.frame2 = tk.Frame(self.master)
 
 		#functions for the menu
 		def about_window():
@@ -335,7 +344,7 @@ class MainApplication:
 		filemenu = tk.Menu(menubar, tearoff=0)
 		filemenu.add_command(label="Exit", command=master.quit)
 		menubar.add_cascade(label="Window", menu=filemenu)
-		#editmenu = tk.Menu(menubar, tearoff=0)
+		#editmenu = tk.Menu(menuba1r, tearoff=0)
 		#editmenu.add_command(label="Copy result to clipboard", command=copy_text)
 		#menubar.add_cascade(label="Edit", menu=editmenu)
 		helpmenu = tk.Menu(menubar, tearoff=0)
@@ -344,16 +353,48 @@ class MainApplication:
 		menubar.add_cascade(label="Help", menu=helpmenu)
 		master.config(menu=menubar)
 
-		#adding elements
-		label1 = ttk.Label(self.frame, text="Select a task:")
-		label1.pack(side="left")
-		taskmenu = ttk.Combobox(self.frame, state="readonly")
-		taskmenu["values"] = ["Documents", "Programs/Installers", "Compressed files", "Sounds/Music files", "Images", "Disk Images", "Miscellaneous files", "Custom sort"]
-		taskmenu.pack(side="left")
-		button1 = ttk.Button(self.frame, text="Run", command=button_command)
-		button1.pack(side="left")
-		self.frame.pack()
 
+		#start it up
+		startup()
+		#adding elements
+		
+		
+		self.entry = ttk.Entry(self.frame1, textvariable=self.entryvar)
+		self.entryvar.set(configuration["download_dir"])
+		
+		button2 = ttk.Button(self.frame1, text="Choose folder...", command=choose_command)
+		
+		label1 = ttk.Label(self.frame1, text="Select a task:")
+		
+		taskmenu = ttk.Combobox(self.frame1, state="readonly")
+		taskmenu["values"] = ["Documents", "Programs/Installers", "Compressed files", "Sounds/Music files", "Images", "Disk Images", "Miscellaneous files", "Custom sort"]
+		
+		button1 = ttk.Button(self.frame1, text="Run", command=run_command)
+		
+		progressbar = ttk.Progressbar(self.frame2, variable=progress_var, maximum=100)
+		
+		#label1.grid(row=1, column=1, pady=5, padx=5)
+		#taskmenu.grid(row=1, column=2, pady=5, padx=5)
+		#button1.grid(row=1, column=3, pady=5, padx=5)
+		#progressbar.grid(row=2, columnspan=5, sticky="WE")
+		
+		self.frame1.grid(row=0, sticky="N")
+		self.frame2.grid(row=1, sticky="S")
+		#self.frame1.grid_columnconfigure(0, weight=1)
+		#self.frame1.grid_rowconfigure(0, weight=1)
+		#self.frame2.grid_columnconfigure(0, weight=1)
+		#self.frame2.grid_rowconfigure(0, weight=1)
+		
+		#self.frame1.grid_columnconfigure(2, weight=1, uniform="foo")
+		#self.frame1.grid_columnconfigure(3, weight=1, uniform="foo")
+		#self.frame1.grid_columnconfigure(4, weight=1, uniform="foo")
+		#self.frame1.grid_columnconfigure(1, weight=1, uniform="foo")
+		self.entry.grid(row=1, column=1)
+		button2.grid(row=1, column=2)
+		label1.grid(row=2, column=1)
+		taskmenu.grid(row=2, column=2)
+		button1.grid(row=2, column=3)
+		progressbar.grid(columnspan=3, sticky="WE")		
 
 class About:
 	def __init__(self, master):
